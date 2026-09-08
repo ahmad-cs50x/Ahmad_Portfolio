@@ -3,5 +3,8 @@
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": true
+  }
 }
