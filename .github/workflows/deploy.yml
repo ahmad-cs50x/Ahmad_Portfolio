@@ -32,18 +32,22 @@ jobs:
       - name: Build Next.js
         run: npm run build
 
-      - name: Build with next-on-pages
-        run: npx @cloudflare/next-on-pages
+      - name: Set Cloudflare env vars for local dev
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "Using manual deployment mode"
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy with Wrangler (if credentials available)
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx wrangler pages deploy --project-name=ahmad-portfolio
+        working-directory: .
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Manual deployment instruction
+      - name: Alternative deployment
         if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
         run: |
-          echo "::warning::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as GitHub secrets"
-          echo "::info::Or deploy manually from https://dash.cloudflare.com/pages/view/ahmad-portfolio"
+          echo "Deployment requires Cloudflare API token and Account ID."
+          echo "Add these as GitHub secrets: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
+          echo "Or deploy manually via https://dash.cloudflare.com/pages/view/ahmad-portfolio"
+          exit 0
