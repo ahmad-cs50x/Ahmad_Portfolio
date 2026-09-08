@@ -1,28 +1,18 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { getSupabaseAdmin } from "@/lib/db";
+import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
+/** Debug endpoint — removed in v2. Returns 410 Gone. */
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  const sb = getSupabaseAdmin();
+  return NextResponse.json(
+    { success: false, message: "Debug session endpoint has been removed." },
+    { status: 410 }
+  );
+}
 
-  if (session?.user?.email) {
-    const email = session.user.email.toLowerCase();
-    const { data: profile } = await sb
-      .from("profiles")
-      .select("role")
-      .eq("email", email)
-      .maybeSingle();
-
-    return new Response(JSON.stringify({
-      session,
-      profileRole: profile?.role,
-    }, null, 2), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  return new Response(JSON.stringify({ session }, null, 2), {
-    headers: { "Content-Type": "application/json" },
-  });
+export async function POST() {
+  return NextResponse.json(
+    { success: false, message: "Debug session endpoint has been removed." },
+    { status: 410 }
+  );
 }

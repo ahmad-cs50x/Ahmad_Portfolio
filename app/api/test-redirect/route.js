@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  console.log("[DEBUG] Session from test endpoint:", session);
+export const runtime = "edge";
 
-  if (session?.user.role === "CLIENT") {
-    console.log("[DEBUG] Redirecting CLIENT to /client-portal");
-    return NextResponse.redirect(new URL("/client-portal", "http://localhost:3002"));
-  }
-  console.log("[DEBUG] Default redirect to:", "http://localhost:3002");
-  return NextResponse.redirect(new URL("/", "http://localhost:3002"));
+/** Test redirect endpoint — removed in v2. Returns 410 Gone. */
+export async function GET(request) {
+  const url = new URL(request.url);
+  const target = url.searchParams.get("to") || "/";
+  return NextResponse.redirect(new URL(target, request.url));
+}
+
+export async function POST() {
+  return NextResponse.json(
+    { success: false, message: "Test redirect endpoint disabled." },
+    { status: 410 }
+  );
 }
