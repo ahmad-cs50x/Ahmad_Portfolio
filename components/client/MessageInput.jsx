@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import { SendHorizonal, Paperclip, Loader2, X, File as FileIcon } from "lucide-react";
 import AudioRecorder from "./AudioRecorder";
-import VideoRecorder from "./VideoRecorder";
+// import VideoRecorder from "./VideoRecorder";
 import { validateFile } from "@/lib/utils/formatFileSize";
 import { toast } from "@/components/Toast";
 
-export default function MessageInput({ clientId, onSent }) {
+export default function MessageInput({ clientId, session, onSent }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -32,14 +32,15 @@ export default function MessageInput({ clientId, onSent }) {
   }
 
   async function postMessage(payload) {
-    const res = await fetch("/api/messages", {
+    const res = await fetch("/api/messages/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clientId, ...payload }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Could not send message");
-    onSent?.();
+    // Return the message so caller can handle it
+    return data.message;
   }
 
   async function handleSendText() {
@@ -47,22 +48,63 @@ export default function MessageInput({ clientId, onSent }) {
     if (!value && !selectedFiles.length && busy) return;
     setBusy(true);
     setError("");
+    const optimisticId = "temp-" + crypto.randomUUID();
+    const optimisticMessage = {
+      id: optimisticId,
+      client_message_id: optimisticId,
+      message_type: selectedFiles.length ? "file" : "text",
+      body: value || null,
+      status: "sending",
+      sent_at: null,
+      read_at: null,
+      created_at: new Date().toISOString(),
+      sender: { id: session?.user?.profileId, full_name: session?.user?.name },
+      sender_role: session?.user?.role,
+      attachments: selectedFiles.map(f => ({
+        id: "temp-" + crypto.randomUUID(),
+        file_name: f.name,
+        file_size: f.size,
+        file_type: f.type,
+        storage_path: null,
+        storage_provider: null,
+      })),
+    };
+    // Show optimistic message immediately with all attachments
+    onSent?.({ type: "add", message: optimisticMessage });
     try {
       if (selectedFiles.length) {
         const uploadedFiles = await uploadBlobs(selectedFiles);
-        await postMessage({
+        // Replace temp attachments with real ones
+        const realAttachments = uploadedFiles.map(f => ({
+          id: f.id, file_name: f.file_name, file_size: f.file_size,
+          file_type: f.file_type, storage_path: f.storage_path, storage_provider: f.storage_provider,
+        }));
+        optimisticMessage.attachments = realAttachments;
+        optimisticMessage.message_type = "file";
+        optimisticMessage.attachment_id = uploadedFiles[0].id;
+        optimisticMessage.status = "sent";
+        optimisticMessage.sent_at = new Date().toISOString();
+        // Update UI immediately with the fully-populated message (all attachments + status)
+        onSent?.({ 
+          type: "reconcile", 
+          clientMessageId: optimisticId, 
+          message: optimisticMessage 
+        });
+        const serverResponse = await postMessage({
           text: value || null,
           attachmentIds: uploadedFiles.map(f => f.id),
           messageType: "file",
+          clientMessageId: optimisticId,
         });
         setSelectedFiles([]);
         if (fileRef.current) fileRef.current.value = "";
       } else {
-        await postMessage({ text: value });
+        await postMessage({ text: value, clientMessageId: optimisticId });
       }
       setText("");
     } catch (e) {
       setError(e.message);
+      onSent?.({ type: "fail", clientMessageId: optimisticId });
     } finally {
       setBusy(false);
     }
@@ -188,7 +230,7 @@ export default function MessageInput({ clientId, onSent }) {
             {!videoMode && (
               <AudioRecorder onSend={handleSendRecording} />
             )}
-            <button
+            {/* <button
               type="button"
               onClick={() => setVideoMode(true)}
               disabled={busy}
@@ -196,7 +238,7 @@ export default function MessageInput({ clientId, onSent }) {
               className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:border-cyan-400/40 hover:text-cyan-300 disabled:opacity-50"
             >
               <VideoIcon />
-            </button>
+            </button> */}
 
             <button
               type="button"

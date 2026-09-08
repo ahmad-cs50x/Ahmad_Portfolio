@@ -3,7 +3,7 @@ import { requireAuth, resolveClientScope, isSuperAdmin } from "@/lib/permissions
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { removeObject } from "@/lib/storage";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request) {
   if (!isDbConfigured()) {
@@ -51,7 +51,7 @@ export async function DELETE(request) {
   const sb = getSupabaseAdmin();
   const { data: fileRow } = await sb
     .from("files")
-    .select("id,client_id,file_size,storage_path,storage_provider,tg_file_id,tg_message_id,b2_file_id,uploaded_by")
+    .select("id,client_id,file_size,storage_path,storage_provider,tg_file_id,tg_message_id,uploaded_by")
     .eq("id", fileId)
     .maybeSingle();
   if (!fileRow) return NextResponse.json({ success: false, message: "File not found." }, { status: 404 });
@@ -69,7 +69,6 @@ export async function DELETE(request) {
 
   try {
     await removeObject({
-      fileId: fileRow.b2_file_id,
       fileName: fileRow.storage_path,
       storageProvider: fileRow.storage_provider,
       tgFileId: fileRow.tg_file_id,

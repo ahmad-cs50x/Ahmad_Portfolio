@@ -25,8 +25,8 @@ export default function VerifyRequestPage() {
           We sent you a secure sign-in link. Click it to continue — it expires in 24 hours.
         </p>
         <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs leading-relaxed text-zinc-500">
-          Didn&apos;t receive it? Check your spam folder, or make sure SMTP is configured in
-          the project environment.
+          Didn&apos;t receive it? Check your Telegram chat, or make sure the Telegram
+          bot is configured in the project environment.
         </p>
         <Link
           href="/"

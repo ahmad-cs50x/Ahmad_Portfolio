@@ -4,13 +4,17 @@ import { isStorageConfigured, buildStoragePath, putFile } from "@/lib/storage";
 import { getSupabaseAdmin } from "@/lib/db";
 import { validateFile } from "@/lib/utils/formatFileSize";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const MAX_COVER = 10 * 1024 * 1024;
 
 export async function POST(request) {
   if (!isStorageConfigured()) {
-    return NextResponse.json({ success: false, message: "Object storage not configured — paste an image URL instead." }, { status: 503 });
+    return NextResponse.json({
+      success: false,
+      message: "Object storage not configured. Set TG_BOT_TOKEN. For a private channel backend also set TG_CHANNEL_ID, or leave it blank for chat-based storage (uses TG_CHAT_ID)"
+    }, { status: 503 });
+
   }
   const session = await requireSuperAdmin();
   if (!session) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
@@ -23,7 +27,7 @@ export async function POST(request) {
     return NextResponse.json({ success: false, message: "Only image files are allowed." }, { status: 415 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = new Uint8Array(await file.arrayBuffer());
   const storagePath = buildStoragePath({
     purpose: "blog",
     fileType: file.type,
@@ -48,7 +52,7 @@ export async function POST(request) {
       file_size: uploaded.size ?? buffer.length,
       storage_path: storagePath,
       storage_provider: uploaded.storageProvider,
-      b2_file_id: uploaded.b2?.fileId ?? null,
+      b2_file_id: null,
       tg_file_id: uploaded.tg?.fileId ?? null,
       tg_message_id: uploaded.tg?.messageId ?? null,
       purpose: "blog",
@@ -58,6 +62,6 @@ export async function POST(request) {
     .single();
 
   // Served publicly through the blog-aware download route.
-  const base = process.env.NEXT_PUBLIC_APP_URL || "";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "";
   return NextResponse.json({ success: true, url: `${base}/api/files/${fileRow.id}` });
 }

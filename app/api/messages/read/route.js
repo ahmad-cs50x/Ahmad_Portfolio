@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth, resolveClientScope } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function POST(request) {
   if (!isDbConfigured()) return NextResponse.json({ success: false, message: "Database not configured." }, { status: 503 });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const FIELDS = {
   title: "title",

@@ -31,13 +31,22 @@ export default function AudioRecorder({ onSend }) {
         : "audio/mp4";
       const recorder = new MediaRecorder(stream, { mimeType: mime });
       chunksRef.current = [];
-      recorder.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
+      // Collect ALL data in one big chunk for complete audio
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
       recorder.onstop = () => {
-        setBlob(new Blob(chunksRef.current, { type: mime }));
-        setState("preview");
+        // Create blob from all chunks - ensures complete recording
+        // Wait a tiny bit for final chunk
+        setTimeout(() => {
+          setBlob(new Blob(chunksRef.current, { type: mime }));
+          setState("preview");
+        }, 100);
       };
       recorderRef.current = recorder;
-      recorder.start();
+      recorder.start(1000); // Request data every 1 second for safety
       setState("recording");
       setSeconds(0);
       timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -47,9 +56,17 @@ export default function AudioRecorder({ onSend }) {
   }
 
   function stop() {
-    recorderRef.current?.stop();
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+      // Stop tracks immediately after requesting stop
+      setTimeout(() => {
+        if (recorder?.stream) {
+          recorder.stream.getTracks().forEach((t) => t.stop());
+        }
+      }, 100);
+    }
     clearInterval(timerRef.current);
-    cleanup();
   }
 
   async function send() {

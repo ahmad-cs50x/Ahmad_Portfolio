@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { verifySync } from "otplib";
+import { verifyCode } from "@/lib/totp";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 /**
  * Verifies the 6-digit TOTP code that the user enters on the /auth/totp-gate
@@ -47,8 +47,8 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: "Server misconfiguration." }, { status: 500 });
     }
 
-    const result = verifySync({ token: code, secret });
-    if (!result?.valid) {
+    const valid = await verifyCode(secret, code);
+    if (!valid) {
       return NextResponse.json({ success: false, message: "Invalid or expired code." }, { status: 401 });
     }
 

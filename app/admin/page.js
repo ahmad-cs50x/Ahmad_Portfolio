@@ -56,7 +56,7 @@ export default async function AdminDashboard() {
 
   const clientStorageUsed = (storage ?? []).reduce((sum, c) => sum + Number(c.storage_used || 0), 0);
   const attachmentBytes = (attachments ?? []).reduce((sum, a) => sum + Number(a.file_size || 0), 0);
-  const messageBytes = (messages ?? []).reduce((sum, m) => sum + Buffer.byteLength(m.content || "", "utf8"), 0);
+  const messageBytes = (messages ?? []).reduce((sum, m) => sum + new TextEncoder().encode(m.content || "").length, 0);
 
   const totalUsedBytes = Math.max(clientStorageUsed, attachmentBytes + messageBytes);
   const unlimited = (storage ?? []).filter((c) => c.no_portal_limit).length;

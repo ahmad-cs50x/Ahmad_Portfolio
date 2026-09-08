@@ -9,10 +9,10 @@ export default function AdminSettingsPage() {
     ["Signed in as", session?.user?.email],
     ["Role", "SUPER_ADMIN"],
     ["Your timezone", session?.user?.timezone || "—"],
-    ["Auth providers", "Google OAuth + Email magic link (Nodemailer SMTP)"],
+    ["Auth providers", "Google OAuth + Email magic link (Telegram)"],
     ["Database", "Supabase PostgreSQL"],
-    ["File storage", "Backblaze B2 (private, signed routes)"],
-    ["Contact form API", "Express server on port 5000 (/api/contact)"],
+    ["File storage", "Telegram (private, bot-only)"],
+    ["Contact form API", "Next.js API routes (built-in)"],
   ];
 
   return (

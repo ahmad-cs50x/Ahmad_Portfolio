@@ -31,21 +31,100 @@ export default function MessagesPage() {
     }
   }, []);
 
-  const handleMessageUpdate = useCallback((action, messageId) => {
+  const handleMessageUpdate = useCallback((action, payload) => {
     if (action === "delete") {
       setData((prev) => ({
         ...prev,
-        messages: prev.messages.filter((m) => m.id !== messageId),
+        messages: prev.messages.filter((m) => m.id !== payload),
       }));
+      // Reload to ensure consistency
+      setTimeout(() => load(), 300);
+    } else if (action === "bulk_delete") {
+      // Remove all selected messages
+      const idsToRemove = new Set(payload);
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.filter((m) => !idsToRemove.has(m.id)),
+      }));
+      // Reload to ensure consistency
+      setTimeout(() => load(), 300);
+    } else if (action === "clear") {
+      // Clear all messages
+      setData((prev) => ({
+        ...prev,
+        messages: [],
+      }));
+      // Reload to ensure consistency
+      setTimeout(() => load(), 300);
     } else if (action === "read") {
       setData((prev) => ({
         ...prev,
         messages: prev.messages.map((m) =>
-          m.id === messageId ? { ...m, read_at: new Date().toISOString() } : m
+          m.id === payload ? { ...m, read_at: new Date().toISOString(), status: "read" } : m
+        ),
+      }));
+    } else if (action === "add") {
+      setData((prev) => ({
+        ...prev,
+        messages: [...prev.messages, payload.message],
+      }));
+    } else if (action === "reconcile") {
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.map((m) =>
+          m.client_message_id === payload.clientMessageId
+            // Preserve attachments from optimistic message, only update status fields
+            ? {
+                ...m,
+                id: payload.id,
+                status: "sent",
+                sent_at: payload.sent_at,
+                client_message_id: payload.id,
+                attachments: payload.attachments || m.attachments,
+              }
+            : m
+        ),
+      }));
+    } else if (action === "fail") {
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.map((m) =>
+          m.client_message_id === payload.clientMessageId
+            ? { ...m, status: "failed" }
+            : m
         ),
       }));
     }
   }, []);
+
+  // MessageInput calls onSent in three shapes: an action descriptor
+  // ({ type, ...payload }), a "fail" descriptor, or the raw reconciled
+  // message returned by /api/messages/send. Normalize them for
+  // handleMessageUpdate's (action, payload) signature.
+  const handleInputEvent = useCallback((action) => {
+    if (!action) return;
+    if (typeof action === "string") {
+      handleMessageUpdate(action);
+    } else if (action.type) {
+      if (action.type === "reconcile" && action.message) {
+        // Merge server response but preserve attachments from optimistic message
+        handleMessageUpdate(action.type, {
+          clientMessageId: action.clientMessageId,
+          id: action.message.id,
+          sent_at: action.message.sent_at,
+          attachments: action.message.attachments, // Keep all attachments
+        });
+      } else {
+        handleMessageUpdate(action.type, action);
+      }
+    } else if (action.id) {
+      handleMessageUpdate("reconcile", {
+        clientMessageId: action.client_message_id,
+        id: action.id,
+        sent_at: action.sent_at,
+      });
+    }
+  }, [handleMessageUpdate]);
 
   useEffect(() => {
     load().then(() => {
@@ -54,12 +133,14 @@ export default function MessagesPage() {
   }, [load]);
 
   // Listen for real-time updates
-  useRealtimeChannel(data?.meta?.clientId ? `conv:${data.meta.clientId}` : null, (event) => {
-    if (event?.type === "message_read") {
-      handleMessageUpdate("read", event.id);
-    } else if (event?.type === "message_deleted") {
-      handleMessageUpdate("delete", event.id);
-    } else {
+  useRealtimeChannel(data?.meta?.clientId ? `conv:${data.meta.clientId}` : null, (eventName, payload) => {
+    if (eventName === "message_read") {
+      handleMessageUpdate("read", payload?.id);
+    } else if (eventName === "message_deleted") {
+      handleMessageUpdate("delete", payload?.id);
+    } else if (eventName === "message") {
+      load();
+    } else if (eventName === "chat_cleared") {
       load();
     }
   });
@@ -143,9 +224,10 @@ export default function MessagesPage() {
             {unreadCount > 0 ? `${unreadCount} unread message${unreadCount > 1 ? "s" : ""}` : "New messages"}
           </span>
         </button>
+        
       )}
       {data?.meta?.clientId && (
-        <MessageInput clientId={data.meta.clientId} onSent={load} />
+        <MessageInput clientId={data.meta.clientId} session={session} onSent={handleInputEvent} />
       )}
     </div>
   );

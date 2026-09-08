@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const GB = 1024 ** 3;
 const QUOTA_PRESETS = [5, 20, 50, 100];

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
-import crypto from "crypto";
+import { hashToken } from "@/lib/invites";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request) {
   if (!isDbConfigured()) {
@@ -14,7 +14,7 @@ export async function GET(request) {
     return NextResponse.redirect(new URL("/login?error=MissingToken", request.url));
   }
 
-  const tokenHash = crypto.createHash("sha256").update(plainToken).digest("hex");
+  const tokenHash = await hashToken(plainToken);
 
   const sb = getSupabaseAdmin();
   const { data: invite } = await sb
@@ -26,7 +26,7 @@ export async function GET(request) {
   if (!invite) {
     return NextResponse.redirect(new URL("/login?error=InvalidToken", request.url));
   }
-  
+
   if (invite.revoked_at || new Date(invite.expires_at).getTime() < Date.now()) {
     return NextResponse.redirect(new URL("/login?error=ExpiredToken", request.url));
   }
@@ -37,6 +37,6 @@ export async function GET(request) {
 
   const autoLoginUrl = new URL("/login", request.url);
   autoLoginUrl.hash = `autoEmail=${encodeURIComponent(invite.email)}&autoPassword=${encodeURIComponent(invite.password)}`;
-  
+
   return NextResponse.redirect(autoLoginUrl);
 }

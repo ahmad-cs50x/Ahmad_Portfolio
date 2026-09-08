@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
 
 export const metadata = {
-  title: "Ahmad — Portfolio",
+  title: "Ahmad's Portfolio",
   description:
     "Portfolio of Ahmad, a full-stack developer crafting immersive, high-performance web experiences with Next.js, Node.js and Three.js.",
 };
@@ -21,10 +21,11 @@ export default function RootLayout({ children }) {
         <div className="noise" aria-hidden="true" />
         <CursorGlow />
         {children}
-        {/* One toast host for the whole app — the portal, the admin console and
+        {/* One toast host for the whole app â€” the portal, the admin console and
             the login page all publish to it. */}
         <Toaster />
       </body>
     </html>
   );
 }
+export const runtime = 'edge';

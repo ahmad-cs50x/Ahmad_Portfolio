@@ -2,7 +2,7 @@ import { requireAuth, resolveClientScope } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { getFileStream } from "@/lib/storage";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request, { params }) {
   if (!isDbConfigured()) {
@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
   const sb = getSupabaseAdmin();
   const { data: fileRow } = await sb
     .from("files")
-    .select("client_id,storage_path,file_name,file_type,file_size,b2_file_id,tg_file_id,storage_provider,archived,purpose")
+    .select("client_id,storage_path,file_name,file_type,file_size,tg_file_id,storage_provider,archived,purpose")
     .eq("id", params.id)
     .maybeSingle();
   if (!fileRow) return new Response("Not found", { status: 404 });

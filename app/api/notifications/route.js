@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { publish, channels } from "@/lib/realtime";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET() {
   if (!isDbConfigured()) return NextResponse.json({ success: false, message: "Database not configured." }, { status: 503 });

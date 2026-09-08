@@ -4,7 +4,9 @@ import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { publish, channels } from "@/lib/realtime";
 import { removeObject, putText, getText, buildMessageBodyPath, removeTextObject } from "@/lib/storage";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
+
+const byteLengthUtf8 = (str) => new TextEncoder().encode(str).length;
 
 async function conversationMeta(sb, clientId) {
   const { data: clientProfiles } = await sb
@@ -34,7 +36,7 @@ export async function GET(request) {
   const { data: messages, error } = await sb
     .from("messages")
     .select(
-      `id,message_type,body,body_provider,body_storage_path,body_storage_provider,body_tg_file_id,body_preview,body_truncated,created_at,recorded_at,uploaded_at,read_at,sender_role,
+      `id,message_type,body,body_provider,body_storage_path,body_storage_provider,body_tg_file_id,body_preview,body_truncated,created_at,recorded_at,uploaded_at,read_at,sender_role,status,sent_at,client_message_id,
        sender:profiles!sender_profile_id(id,full_name,email),
        attachment:files!attachment_id(id,file_name,file_size,file_type,storage_path,storage_provider)`
     )
@@ -260,6 +262,9 @@ export async function DELETE(request) {
     }
     await sb.from("messages").delete().eq("client_id", clientId);
 
+    // Mark client chat as cleared with timestamp
+    await sb.from("clients").update({ chat_cleared_at: new Date().toISOString() }).eq("id", clientId);
+
     publish(channels.conversation(clientId), "chat_cleared", { clientId });
 
     return NextResponse.json({ success: true, cleared: true });
@@ -352,7 +357,7 @@ export async function DELETE(request) {
   // Delete message_attachments entries
   await sb.from("message_attachments").delete().eq("message_id", messageId);
 
-  // Delete message
+  // Physical delete message
   const { error: deleteError } = await sb.from("messages").delete().eq("id", messageId);
 
   if (deleteError) {
@@ -413,9 +418,9 @@ export async function POST(request) {
       ? attachmentRows.some(f => f.purpose === "message") ? "file" : "file"
       : "text");
 
-  // Persist the text payload to object storage (B2 by default). The DB keeps
+  // Persist the text payload to object storage (Telegram). The DB keeps
   // only a short preview as a render cache; the object is the source of truth.
-  let bodyObject = { provider: "inline", storageProvider: null, storagePath: null, tgFileId: null, tgMessageId: null, preview: text || null, bytes: text ? Buffer.byteLength(text, "utf8") : 0 };
+  let bodyObject = { provider: "inline", storageProvider: null, storagePath: null, tgFileId: null, tgMessageId: null, preview: text || null, bytes: text ? byteLengthUtf8(text) : 0 };
   if (text) {
     const objectPath = buildMessageBodyPath(scope.clientId, crypto.randomUUID());
     try {
@@ -432,7 +437,7 @@ export async function POST(request) {
     } catch (e) {
       // Fall back to inline in Postgres if object storage is unavailable.
       console.error("[messages] body upload failed, storing inline:", e.message);
-      bodyObject = { provider: "inline", storageProvider: null, storagePath: null, tgFileId: null, tgMessageId: null, preview: text, bytes: Buffer.byteLength(text, "utf8") };
+      bodyObject = { provider: "inline", storageProvider: null, storagePath: null, tgFileId: null, tgMessageId: null, preview: text, bytes: byteLengthUtf8(text) };
     }
   }
 

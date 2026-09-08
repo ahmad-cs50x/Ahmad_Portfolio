@@ -186,13 +186,13 @@ export default function InvitesPage() {
     <div className="space-y-8">
       {!mailConfigured && (
         <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5 text-sm leading-relaxed text-amber-200">
-          SMTP isn&apos;t configured, so invite emails cannot be sent. Set{" "}
+          Telegram isn&apos;t configured, so invite notifications cannot be sent. Set{" "}
           <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
-            SMTP_HOST
+            TG_BOT_TOKEN
           </code>{" "}
           and{" "}
           <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
-            SMTP_USER
+            TG_CHAT_ID
           </code>{" "}
           in{" "}
           <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">

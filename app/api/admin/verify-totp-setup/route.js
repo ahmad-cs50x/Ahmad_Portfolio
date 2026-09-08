@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { verifySync } from "otplib";
+import { verifyCode } from "@/lib/totp";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/permissions";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function POST(request) {
   if (!isDbConfigured()) return NextResponse.json({ success: false, message: "Database not configured" }, { status: 503 });
@@ -17,8 +17,8 @@ export async function POST(request) {
   }
   if (!secret) return NextResponse.json({ success: false, message: "Secret required" }, { status: 400 });
 
-  const result = verifySync({ token: code, secret });
-  if (!result?.valid) {
+  const valid = await verifyCode(secret, code);
+  if (!valid) {
     return NextResponse.json({ success: false, message: "Invalid or expired code" }, { status: 401 });
   }
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 function slugify(value) {
   return String(value)
@@ -53,7 +53,7 @@ export async function POST(request) {
    * Flipping the status dropdown without also filling the (easily missed) date
    * field used to 400 here, and a post saved as 'published' with a null date
    * would silently never appear. So: stamp "now" when the date is absent.
-   * 'scheduled' is the one case where a date is genuinely required — the whole
+   * 'scheduled' is the one case where a date is genuinely required â€” the whole
    * point of scheduling is the future timestamp.
    */
   let publishedAt = body.publishedAt ? new Date(body.publishedAt).toISOString() : null;
@@ -127,7 +127,7 @@ export async function PATCH(request) {
   /*
    * Same rule as POST: a post that ends up 'published' must carry a date, or it
    * will never satisfy `published_at <= now` and will silently stay invisible.
-   * Check the *resulting* state — the status might be unchanged in this patch
+   * Check the *resulting* state â€” the status might be unchanged in this patch
    * while the date is being cleared, or vice versa.
    */
   const nextStatus = patch.status ?? current.status;

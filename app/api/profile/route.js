@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/permissions";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { COMMON_TIMEZONES } from "@/lib/timezone";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function PATCH(request) {
   if (!isDbConfigured()) return NextResponse.json({ success: false, message: "Database not configured." }, { status: 503 });
@@ -33,7 +33,17 @@ export async function PATCH(request) {
   const { error } = await sb.from("profiles").update(patch).eq("id", session.user.profileId);
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
-  return NextResponse.json({ success: true });
+  // Return the updated profile data to the client
+  const { data: updatedProfile } = await sb
+    .from("profiles")
+    .select("full_name, timezone")
+    .eq("id", session.user.profileId)
+    .single();
+
+  return NextResponse.json({
+    success: true,
+    profile: updatedProfile
+  });
 }
 
 export async function GET() {

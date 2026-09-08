@@ -3,6 +3,7 @@ import { getSession } from "@/lib/permissions";
 import ClientSidebar from "@/components/client/ClientSidebar";
 import ClientHeader from "@/components/client/ClientHeader";
 import AuthProvider from "@/components/AuthProvider";
+import WelcomeToast from "./welcome-toast";
 
 export const metadata = { title: "Client Portal — Portfolio" };
 
@@ -21,6 +22,7 @@ export default async function ClientPortalLayout({ children }) {
           <main className="flex-1 p-6">{children}</main>
         </div>
       </div>
+      <WelcomeToast />
     </AuthProvider>
   );
 }

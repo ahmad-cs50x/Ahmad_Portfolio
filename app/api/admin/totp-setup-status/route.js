@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/permissions";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET() {
   if (!isDbConfigured()) return NextResponse.json({ success: true, done: false });

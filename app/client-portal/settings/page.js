@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, CheckCircle2 } from "lucide-react";
 import { COMMON_TIMEZONES, browserTimezone } from "@/lib/timezone";
 import { useSession } from "next-auth/react";
+import { toast } from "@/components/Toast";
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
@@ -34,16 +35,22 @@ export default function SettingsPage() {
       const json = await res.json();
       if (!res.ok) {
         setError(json.message || "Failed to save");
+        toast.error("Failed to save", { detail: json.message });
         setSaving(false);
         return;
       }
+      // Update local state immediately for instant UI feedback
+      setFullName(fullName.trim());
+      setTimezone(timezone);
       // Force NextAuth to re-fetch the session from the DB
       await update();
       setSaving(false);
       setSaved(true);
+      toast.success("Changes saved! Login agian to see them on setting page.", { duration: 5000 });
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError("Network error. Please try again.");
+      toast.error("Network error", { detail: "Please try again." });
       setSaving(false);
     }
   }

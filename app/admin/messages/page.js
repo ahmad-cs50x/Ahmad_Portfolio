@@ -45,7 +45,113 @@ function Inner() {
   }, [selectedId]);
 
   useEffect(() => { load(); }, [load]);
-  useRealtimeChannel(selectedId ? `conv:${selectedId}` : null, () => load());
+
+  const handleMessageUpdate = useCallback((action, payload) => {
+    if (action === "delete") {
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.filter((m) => m.id !== payload),
+      }));
+      // Reload to ensure consistency
+      setTimeout(() => load(), 300);
+    } else if (action === "bulk_delete") {
+      // Remove all selected messages
+      const idsToRemove = new Set(payload);
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.filter((m) => !idsToRemove.has(m.id)),
+      }));
+      // Reload to ensure consistency
+      setTimeout(() => load(), 300);
+    } else if (action === "clear") {
+      // Clear all messages
+      setData((prev) => ({
+        ...prev,
+        messages: [],
+      }));
+      // Reload to ensure consistency
+      setTimeout(() => load(), 300);
+    } else if (action === "read") {
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.map((m) =>
+          m.id === payload ? { ...m, read_at: new Date().toISOString(), status: "read" } : m
+        ),
+      }));
+    } else if (action === "add") {
+      setData((prev) => ({
+        ...prev,
+        messages: [...prev.messages, payload.message],
+      }));
+    } else if (action === "reconcile") {
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.map((m) =>
+          m.client_message_id === payload.clientMessageId
+            // Preserve attachments from optimistic message, only update status fields
+            ? {
+                ...m,
+                id: payload.id,
+                status: "sent",
+                sent_at: payload.sent_at,
+                client_message_id: payload.id,
+                attachments: payload.attachments || m.attachments,
+              }
+            : m
+        ),
+      }));
+    } else if (action === "fail") {
+      setData((prev) => ({
+        ...prev,
+        messages: prev.messages.map((m) =>
+          m.client_message_id === payload.clientMessageId
+            ? { ...m, status: "failed" }
+            : m
+        ),
+      }));
+    }
+  }, []);
+
+  // MessageInput calls onSent in three shapes: an action descriptor
+  // ({ type, ...payload }), a "fail" descriptor, or the raw reconciled
+  // message returned by /api/messages/send. Normalize them for
+  // handleMessageUpdate's (action, payload) signature.
+  const handleInputEvent = useCallback((action) => {
+    if (!action) return;
+    if (typeof action === "string") {
+      handleMessageUpdate(action);
+    } else if (action.type) {
+      if (action.type === "reconcile" && action.message) {
+        // Merge server response but preserve attachments from optimistic message
+        handleMessageUpdate(action.type, {
+          clientMessageId: action.clientMessageId,
+          id: action.message.id,
+          sent_at: action.message.sent_at,
+          attachments: action.message.attachments, // Keep all attachments
+        });
+      } else {
+        handleMessageUpdate(action.type, action);
+      }
+    } else if (action.id) {
+      handleMessageUpdate("reconcile", {
+        clientMessageId: action.client_message_id,
+        id: action.id,
+        sent_at: action.sent_at,
+      });
+    }
+  }, [handleMessageUpdate]);
+
+  useRealtimeChannel(selectedId ? `conv:${selectedId}` : null, (eventName, payload) => {
+    if (eventName === "message_read") {
+      handleMessageUpdate("read", payload?.id);
+    } else if (eventName === "message_deleted") {
+      handleMessageUpdate("delete", payload?.id);
+    } else if (eventName === "message") {
+      load();
+    } else if (eventName === "chat_cleared") {
+      load();
+    }
+  });
 
   const messagesLength = data?.messages?.length ?? 0;
 
@@ -125,6 +231,7 @@ function Inner() {
                 viewerProfileId={session?.user?.profileId}
                 myTz={data?.meta?.viewerTimezone}
                 otherTz={data?.meta?.otherPartyTimezone}
+                onMessageUpdate={handleMessageUpdate}
                 currentUserRole={session?.user?.role}
                 currentUserName={session?.user?.name}
                 alignRightRole="SUPER_ADMIN"
@@ -145,7 +252,7 @@ function Inner() {
               </button>
             )}
 
-            <MessageInput clientId={selectedId} onSent={load} />
+            <MessageInput clientId={selectedId} session={session} onSent={handleInputEvent} />
           </div>
         )}
       </div>

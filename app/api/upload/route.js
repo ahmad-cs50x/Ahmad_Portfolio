@@ -4,8 +4,7 @@ import { getSupabaseAdmin, isDbConfigured } from "@/lib/db";
 import { isStorageConfigured, buildStoragePath, putFile } from "@/lib/storage";
 import { validateFile } from "@/lib/utils/formatFileSize";
 
-export const runtime = "nodejs";
-export const maxDuration = 60;
+export const runtime = "edge";
 
 const MESSAGE_MEDIA_LIMIT = 200 * 1024 * 1024; // 200 MB for recorded audio/video
 const MAX_FILES_PER_UPLOAD = 10;
@@ -16,7 +15,11 @@ function jsonError(message, status = 400) {
 
 export async function POST(request) {
   if (!isDbConfigured()) return jsonError("Database not configured.", 503);
-  if (!isStorageConfigured()) return jsonError("Object storage is not configured.", 503);
+  if (!isStorageConfigured())
+  return jsonError(
+    "Object storage not configured. Set TG_BOT_TOKEN. For a private channel backend also set TG_CHANNEL_ID.",
+    503
+  );
 
   const session = await requireAuth();
   if (!session) return jsonError("Unauthorized.", 401);
@@ -46,7 +49,7 @@ export async function POST(request) {
     const validation = validateFile(file, { maxSizeBytes: MESSAGE_MEDIA_LIMIT });
     if (!validation.valid) return jsonError(validation.error, 413);
     
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = new Uint8Array(await file.arrayBuffer());
     const contentType = file.type || "application/octet-stream";
     totalSize += buffer.length;
     fileBuffers.push(buffer);
@@ -69,7 +72,7 @@ export async function POST(request) {
     return jsonError("Storage quota exceeded. Contact your project manager.", 413);
   }
 
-  // Current footprint on Telegram, used to decide Telegram-vs-B2 tiering.
+  // Current Telegram footprint, kept for size accounting and quota reporting.
   const { data: tgFiles } = await sb
     .from("files")
     .select("file_size")
@@ -108,7 +111,7 @@ export async function POST(request) {
         file_size: uploaded.size,
         storage_provider: uploaded.storageProvider,
         storage_path: storagePath,
-        b2_file_id: uploaded.b2?.fileId ?? null,
+        b2_file_id: null,
         tg_file_id: uploaded.tg?.fileId ?? null,
         tg_message_id: uploaded.tg?.messageId ?? null,
         uploaded_by: session.user.profileId ?? null,

@@ -14,12 +14,14 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { toast } from "@/components/Toast";
+import { svgDataUrl } from "@/lib/qrcode-edge";
 
 function generateSecret() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bytes = crypto.getRandomValues(new Uint8Array(20));
   let secret = "";
-  for (let i = 0; i < 32; i++) {
-    secret += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < bytes.length; i++) {
+    secret += chars.charAt(bytes[i] % chars.length);
   }
   return secret;
 }
@@ -117,11 +119,7 @@ export default function TotpSetupPage() {
   useEffect(() => {
     if (secret) {
       const otpauth = `otpauth://totp/Ahmad%20Portfolio%20Admin?secret=${secret}&issuer=Ahmad%20Portfolio`;
-      import("qrcode").then(({ default: QRCode }) =>
-        QRCode.toDataURL(otpauth, { width: 256, margin: 2 })
-          .then(setQrDataUrl)
-          .catch(console.error),
-      );
+      setQrDataUrl(svgDataUrl(otpauth, { size: 256, margin: 2 }));
     }
   }, [secret]);
 

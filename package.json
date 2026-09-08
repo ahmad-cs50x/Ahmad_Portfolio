@@ -5,23 +5,24 @@
   "description": "Ahmad's portfolio — Next.js application",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "npx @cloudflare/next-on-pages",
+    "build": "next build",
     "preview": "npx wrangler pages dev ./.next",
     "deploy": "npx @cloudflare/next-on-pages && npx wrangler pages deploy",
+    "migrate": "npx node scripts/migrate.js up",
     "lint": "next lint"
   },
   "dependencies": {
     "@react-three/drei": "^9.105.6",
     "@react-three/fiber": "^8.16.6",
     "@supabase/supabase-js": "^2.112.4",
+    "date-fns": "^3.6.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.2.6",
     "jszip": "^3.10.1",
     "lucide-react": "^0.394.0",
     "next": "^14.2.35",
-    "next-auth": "^4.24.15",
-    "otplib": "^13.5.0",
-    "qrcode": "^1.5.4",
+    "next-auth": "5.0.0-beta.32",
+    "qrcode-generator": "^2.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.164.1"
