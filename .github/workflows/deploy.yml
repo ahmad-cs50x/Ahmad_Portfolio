@@ -16,40 +16,21 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ./.next/cache
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
       - name: Build Next.js
         run: npm run build
 
-      - name: Check for _routes.json
-        run: |
-          ls -la .next/
-          cat .next/prerender-manifest.json 2>/dev/null | head -20 || true
-
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy with Wrangler
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
-        run: |
-          # Create .vercel/output structure for wrangler
-          mkdir -p .vercel/output/static
-          cp -r .next/static .vercel/output/static/ 2>/dev/null || true
-          npx wrangler pages deploy --project-name=ahmad-portfolio
+        run: npx wrangler pages deploy .next --project-name=ahmad-portfolio --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
 
-      - name: Deployment status
-        if: always()
+      - name: Verify deployment
         run: |
-          echo "Deployment completed. Check Cloudflare dashboard for results."
+          echo "Deployment completed. Check Cloudflare dashboard."
           echo "URL: https://ahmad-portfolio.pages.dev"
