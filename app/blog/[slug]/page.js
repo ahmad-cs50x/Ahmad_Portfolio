@@ -21,7 +21,8 @@ async function getPost(slug) {
 export const revalidate = 0;
 
 export async function generateMetadata({ params }) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   if (!post) return { title: "Post not found — Ahmad" };
   return {
     title: post.seo_title || `${post.title} — Ahmad`,
@@ -36,7 +37,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   if (!post) notFound();
 
   return (

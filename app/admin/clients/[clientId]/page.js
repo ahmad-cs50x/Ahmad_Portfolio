@@ -4,11 +4,12 @@ import { getSupabaseAdmin } from "@/lib/db";
 import { formatFileSize } from "@/lib/utils/formatFileSize";
 
 export default async function AdminClientDetail({ params }) {
+  const { clientId } = await params;
   const sb = getSupabaseAdmin();
   if (!sb) return <p className="text-sm text-zinc-500">Database not connected.</p>;
 
   const [{ data: client }, { data: profiles }, { data: projects }] = await Promise.all([
-    sb.from("clients").select("*").eq("id", params.clientId).maybeSingle(),
+    sb.from("clients").select("*").eq("id", clientId).maybeSingle(),
     sb.from("profiles").select("id,email,full_name").eq("client_id", params.clientId),
     sb.from("projects").select("id,title,status,progress").eq("client_id", params.clientId).order("created_at", { ascending: false }),
   ]);

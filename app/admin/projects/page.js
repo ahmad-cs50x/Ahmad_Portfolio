@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Plus, Trash2, Filter } from "lucide-react";
@@ -379,7 +379,9 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      <ProjectCreateForm clients={clients} open={open} onToggle={setOpen} />
+      <Suspense fallback={null}>
+        <ProjectCreateForm clients={clients} open={open} onToggle={setOpen} />
+      </Suspense>
 
       <div className="overflow-hidden rounded-2xl border border-white/10">
         {filteredProjects.length === 0 && (

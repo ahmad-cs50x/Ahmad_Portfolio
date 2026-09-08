@@ -28,10 +28,11 @@ export async function GET(request, { params }) {
   const session = await requireSuperAdmin();
   if (!session) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
 
+  const { id } = await params;
   const sb = getSupabaseAdmin();
   const [{ data: project }, { data: milestones }] = await Promise.all([
-    sb.from("projects").select("*, client:clients(company_name)").eq("id", params.id).maybeSingle(),
-    sb.from("milestones").select("*").eq("project_id", params.id).order("position"),
+    sb.from("projects").select("*, client:clients(company_name)").eq("id", id).maybeSingle(),
+    sb.from("milestones").select("*").eq("project_id", id).order("position"),
   ]);
   if (!project) return NextResponse.json({ success: false, message: "Not found." }, { status: 404 });
   return NextResponse.json({ success: true, project, milestones: milestones ?? [] });
@@ -42,6 +43,7 @@ export async function PATCH(request, { params }) {
   const session = await requireSuperAdmin();
   if (!session) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
 
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const sb = getSupabaseAdmin();
 
@@ -73,7 +75,7 @@ export async function PATCH(request, { params }) {
 
   let project = null;
   if (Object.keys(patch).length) {
-    const { data, error } = await sb.from("projects").update(patch).eq("id", params.id).select("*").maybeSingle();
+    const { data, error } = await sb.from("projects").update(patch).eq("id", id).select("*").maybeSingle();
     if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     if (!data) return NextResponse.json({ success: false, message: "Not found." }, { status: 404 });
     project = data;
@@ -83,17 +85,17 @@ export async function PATCH(request, { params }) {
       client_id: data.client_id,
       action: "project.updated",
       entity_type: "project",
-      entity_id: params.id,
+      entity_id: id,
       metadata: { title: data.title },
     });
   }
 
   if (Array.isArray(body.milestones)) {
-    await sb.from("milestones").delete().eq("project_id", params.id);
+    await sb.from("milestones").delete().eq("project_id", id);
     const rows = body.milestones
       .filter((m) => m?.title?.trim())
       .map((m, i) => ({
-        project_id: params.id,
+        project_id: id,
         title: String(m.title).trim().slice(0, 160),
         done: Boolean(m.done),
         position: i,
@@ -109,8 +111,9 @@ export async function DELETE(request, { params }) {
   const session = await requireSuperAdmin();
   if (!session) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
 
+  const { id } = await params;
   const sb = getSupabaseAdmin();
-  const { error } = await sb.from("projects").update({ status: "archived" }).eq("id", params.id);
+  const { error } = await sb.from("projects").update({ status: "archived" }).eq("id", id);
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   return NextResponse.json({ success: true, archived: true });
 }

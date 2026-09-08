@@ -9,11 +9,12 @@ export async function GET(request, { params }) {
     return new Response(JSON.stringify({ message: "Database not configured." }), { status: 503 });
   }
 
+  const { id } = await params;
   const sb = getSupabaseAdmin();
   const { data: fileRow } = await sb
     .from("files")
     .select("client_id,storage_path,file_name,file_type,file_size,tg_file_id,storage_provider,archived,purpose")
-    .eq("id", params.id)
+    .eq("id", id)
     .maybeSingle();
   if (!fileRow) return new Response("Not found", { status: 404 });
 

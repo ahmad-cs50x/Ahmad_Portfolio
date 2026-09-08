@@ -11,6 +11,7 @@ export async function PATCH(request, { params }) {
   const session = await requireSuperAdmin();
   if (!session) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
 
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const patch = {};
 
@@ -29,7 +30,7 @@ export async function PATCH(request, { params }) {
   const { data, error } = await sb
     .from("clients")
     .update(patch)
-    .eq("id", params.id)
+    .eq("id", id)
     .select("id,company_name,is_active,no_portal_limit,storage_limit")
     .maybeSingle();
 
@@ -38,10 +39,10 @@ export async function PATCH(request, { params }) {
 
   await sb.from("activity_logs").insert({
     actor_profile_id: session.user.profileId,
-    client_id: params.id,
+    client_id: id,
     action: "client.updated",
     entity_type: "client",
-    entity_id: params.id,
+    entity_id: id,
     metadata: patch,
   });
 

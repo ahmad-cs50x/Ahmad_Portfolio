@@ -7,15 +7,16 @@ import { formatFileSize } from "@/lib/utils/formatFileSize";
 import { Globe, Video, FileArchive, Github, BookOpen, HardDrive, CheckCircle2, Circle } from "lucide-react";
 
 export default async function ProjectDetailPage({ params }) {
+  const { projectId } = await params;
   const session = await getSession();
   const scope = await resolveClientScope(session, null);
   const sb = getSupabaseAdmin();
   if (!sb || !scope.clientId) notFound();
 
   const [{ data: project }, { data: milestones }, { data: files }] = await Promise.all([
-    sb.from("projects").select("*").eq("id", params.projectId).eq("client_id", scope.clientId).maybeSingle(),
-    sb.from("milestones").select("*").eq("project_id", params.projectId).order("position"),
-    sb.from("files").select("id,file_name,file_size,file_type,created_at").eq("project_id", params.projectId).eq("archived", false).order("created_at", { ascending: false }),
+    sb.from("projects").select("*").eq("id", projectId).eq("client_id", scope.clientId).maybeSingle(),
+    sb.from("milestones").select("*").eq("project_id", projectId).order("position"),
+    sb.from("files").select("id,file_name,file_size,file_type,created_at").eq("project_id", projectId).eq("archived", false).order("created_at", { ascending: false }),
   ]);
 
   if (!project) notFound();
