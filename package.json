@@ -20,24 +20,18 @@
     "framer-motion": "^11.2.6",
     "jszip": "^3.10.1",
     "lucide-react": "^0.394.0",
-    "next": "^16.3.4",
+    "next": "15.5.2",
     "next-auth": "5.0.0-beta.32",
     "qrcode-generator": "^2.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.164.1"
-  },
-  "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
-    "@cloudflare/workers-types": "^5.20260908.1",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
+    "three": "^0.164.1",
     "vercel": "^59.11.7"
   },
-  "overrides": {
-    "@cloudflare/next-on-pages": {
-      "@cloudflare/workers-types": false
-    }
+  "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.0.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
   }
 }
