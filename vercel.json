@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "installCommand": "npm install --legacy-peer-deps",
   "git": {
     "deploymentEnabled": true
   }
