@@ -111,7 +111,7 @@ export default function Projects({ dbProjects = [] }) {
 
         <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
           {projectsToShow.slice(0, 6).map((project, i) =>
-              <DbProjectCard key={project.id} project={project} index={i} />  
+              <DbProjectCard key={project.id ?? `fallback-${i}`} project={project} index={i} />  
           )}
         </div>
 

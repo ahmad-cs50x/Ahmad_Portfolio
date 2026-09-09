@@ -28,7 +28,7 @@ export default function zExperience() {
 
           <ol className="space-y-12">
             {experience.map((job, i) => (
-              <li key={job.company} className="relative pl-12">
+              <li key={`${job.company}-${i}`} className="relative pl-12">
                 <span className="absolute left-0 top-1.5 grid h-[19px] w-[19px] place-items-center rounded-full border border-violet-500/60 bg-ink">
                   <span className="h-2 w-2 rounded-full bg-gradient-to-r from-violet-400 to-cyan-400 shadow-glow" />
                 </span>

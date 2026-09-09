@@ -12,8 +12,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-three/drei": "^9.105.6",
-    "@react-three/fiber": "^8.16.6",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
     "@supabase/supabase-js": "^2.112.4",
     "date-fns": "^3.6.0",
     "file-saver": "^2.0.5",
@@ -23,8 +23,8 @@
     "next": "15.5.2",
     "next-auth": "5.0.0-beta.32",
     "qrcode-generator": "^2.0.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "three": "^0.164.1",
     "vercel": "^59.11.7"
   },
